@@ -1,0 +1,28 @@
+app:
+  security:
+    jwt:
+      cookie-secure: false
+      cookie-domain: localhost
+      redirect-url: http://localhost:5173/
+  beadmin:
+    mock: false
+    url: http://10.0.7.41:8302/agribank/gateway/api/systems/centeralize-login
+    provider-id: SOTAY
+    channel-id: SOTAY
+    services-id: SOTAY
+    application-id: BEADMIN
+    default-branch: 10509999
+
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/agrinote_db
+    username: root
+    password: 'Mkac@12345'
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true

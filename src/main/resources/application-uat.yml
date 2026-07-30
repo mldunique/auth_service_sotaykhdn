@@ -1,0 +1,14 @@
+app:
+  security:
+    jwt:
+      cookie-secure: true
+      cookie-domain: .sotaykhdn.agribank.com.vn
+      redirect-url: https://uat-sotaykhdn.agribank.com.vn/
+  beadmin:
+    mock: false
+    url: http://10.0.7.41:8302/agribank/gateway/api/systems/centeralize-login
+    provider-id: SOTAY
+    channel-id: SOTAY
+    services-id: SOTAY
+    application-id: BEADMIN
+    default-branch: 10509999
