@@ -223,4 +223,119 @@ public class BranchSyncController {
         }
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping("/users-from-beadmin")
+    public ResponseEntity<String> getUsersFromBEAdmin(
+            @RequestParam(name = "username", required = false, defaultValue = "") String currentUsername,
+            @RequestParam(name = "branchCode", required = false, defaultValue = "") String currentBranchCode) {
+        try {
+            log.info("Sending users query request to BEAdmin (actionType=4) for user: {}, branch: {}...", currentUsername, currentBranchCode);
+
+            String requestId = UUID.randomUUID().toString();
+            String requestTime = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss").format(new Date());
+
+            // 1. Build plaintext inner request
+            Map<String, Object> innerRequest = new HashMap<>();
+            innerRequest.put("requestId", requestId);
+            innerRequest.put("requestTime", requestTime);
+            innerRequest.put("providerId", providerId);
+            innerRequest.put("channelId", channelId);
+            innerRequest.put("merchantId", providerId);
+            innerRequest.put("version", "1.0");
+            innerRequest.put("language", "");
+            innerRequest.put("signature", "");
+            innerRequest.put("servicesId", "BEADMIN");
+            innerRequest.put("clientIP", "127.0.0.1");
+            innerRequest.put("applicationId", applicationId);
+
+            Map<String, String> userMap = new HashMap<>();
+            userMap.put("username", currentUsername);
+            userMap.put("password", "");
+            userMap.put("branchCode", currentBranchCode);
+            userMap.put("actionType", "4");
+            userMap.put("prePassword", "");
+            userMap.put("fullname", "");
+            userMap.put("otp", "");
+
+            innerRequest.put("user", userMap);
+
+            // 2. Serialize and PGP-encrypt the inner request
+            String beAdminReqStr = gson.toJson(innerRequest);
+            String base64ReqData = pgpEncryptionUtil.encrypt(beAdminReqStr);
+
+            // 3. Assemble outer wrapper request
+            Map<String, Object> outerRequest = new HashMap<>();
+            outerRequest.put("requestId", requestId);
+            outerRequest.put("requestTime", requestTime);
+            outerRequest.put("providerId", providerId);
+            outerRequest.put("servicesId", servicesId);
+            outerRequest.put("data", base64ReqData);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            String outerReqStr = gson.toJson(outerRequest);
+
+            HttpEntity<String> httpEntity = new HttpEntity<>(outerReqStr, headers);
+
+            // 4. Dispatch the API request
+            String responseStr = restTemplate.postForObject(url, httpEntity, String.class);
+            if (responseStr == null) {
+                return ResponseEntity.status(500).body("Null response returned from BEAdmin");
+            }
+
+            // 5. Parse outer response
+            JsonObject responseJson = gson.fromJson(responseStr, JsonObject.class);
+            if (responseJson == null || !responseJson.has("data")) {
+                return ResponseEntity.status(500).body("Response from BEAdmin is empty or missing data field");
+            }
+
+            String dataResBase64 = responseJson.get("data").getAsString();
+
+            // 6. Decode Base64 payload
+            byte[] dataResDecoded = Base64.getDecoder().decode(dataResBase64);
+            String resStr = new String(dataResDecoded, StandardCharsets.UTF_8);
+            log.info("Decoded BEAdmin users response JSON: {}", resStr);
+
+            // 7. Extract only branchCode, fullname, and username from the user list, filtered by ETK08 role
+            JsonObject innerResponse = gson.fromJson(resStr, JsonObject.class);
+            List<Map<String, String>> cleanUsers = new ArrayList<>();
+            if (innerResponse != null && innerResponse.has("listUser")) {
+                JsonArray listUser = innerResponse.getAsJsonArray("listUser");
+                for (JsonElement element : listUser) {
+                    if (element.isJsonObject()) {
+                        JsonObject u = element.getAsJsonObject();
+
+                        // Check role list for "ETK08"
+                        boolean hasEtk08 = false;
+                        if (u.has("listGrantRoleOfUser")) {
+                            JsonArray roles = u.getAsJsonArray("listGrantRoleOfUser");
+                            for (JsonElement roleEl : roles) {
+                                if (roleEl.isJsonObject()) {
+                                    JsonObject r = roleEl.getAsJsonObject();
+                                    if (r.has("groupCode") && "ETK08".equals(r.get("groupCode").getAsString())) {
+                                        hasEtk08 = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+
+                        if (hasEtk08) {
+                            Map<String, String> cleanUser = new HashMap<>();
+                            cleanUser.put("branchCode", u.has("branchCode") ? u.get("branchCode").getAsString() : "");
+                            cleanUser.put("fullname", u.has("fullname") ? u.get("fullname").getAsString() : "");
+                            cleanUser.put("username", u.has("username") ? u.get("username").getAsString() : "");
+                            cleanUsers.add(cleanUser);
+                        }
+                    }
+                }
+            }
+
+            return ResponseEntity.ok(gson.toJson(cleanUsers));
+
+        } catch (Exception e) {
+            log.error("Exception during BEAdmin users query: {}", e.getMessage(), e);
+            return ResponseEntity.status(500).body("Error querying users: " + e.getMessage());
+        }
+    }
 }
