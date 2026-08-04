@@ -296,7 +296,7 @@ public class BranchSyncController {
             String resStr = new String(dataResDecoded, StandardCharsets.UTF_8);
             log.info("Decoded BEAdmin users response JSON: {}", resStr);
 
-            // 7. Extract only branchCode, fullname, and username from the user list, filtered by ETK08 role
+            // 7. Extract only branchCode, fullname, and username from the user list, filtered by allowed roles (ESA08, ECV08, ETK08, ETN08)
             JsonObject innerResponse = gson.fromJson(resStr, JsonObject.class);
             List<Map<String, String>> cleanUsers = new ArrayList<>();
             if (innerResponse != null && innerResponse.has("listUser")) {
@@ -305,26 +305,32 @@ public class BranchSyncController {
                     if (element.isJsonObject()) {
                         JsonObject u = element.getAsJsonObject();
 
-                        // Check role list for "ETK08"
-                        boolean hasEtk08 = false;
+                        // Check role list for allowed roles
+                        boolean hasAllowedRole = false;
+                        String matchedGroupCode = "";
                         if (u.has("listGrantRoleOfUser")) {
                             JsonArray roles = u.getAsJsonArray("listGrantRoleOfUser");
                             for (JsonElement roleEl : roles) {
                                 if (roleEl.isJsonObject()) {
                                     JsonObject r = roleEl.getAsJsonObject();
-                                    if (r.has("groupCode") && "ETK08".equals(r.get("groupCode").getAsString())) {
-                                        hasEtk08 = true;
-                                        break;
+                                    if (r.has("groupCode")) {
+                                        String gCode = r.get("groupCode").getAsString();
+                                        if ("ESA08".equals(gCode) || "ECV08".equals(gCode) || "ETK08".equals(gCode) || "ETN08".equals(gCode)) {
+                                            hasAllowedRole = true;
+                                            matchedGroupCode = gCode;
+                                            break;
+                                        }
                                     }
                                 }
                             }
                         }
 
-                        if (hasEtk08) {
+                        if (hasAllowedRole) {
                             Map<String, String> cleanUser = new HashMap<>();
                             cleanUser.put("branchCode", u.has("branchCode") ? u.get("branchCode").getAsString() : "");
                             cleanUser.put("fullname", u.has("fullname") ? u.get("fullname").getAsString() : "");
                             cleanUser.put("username", u.has("username") ? u.get("username").getAsString() : "");
+                            cleanUser.put("groupCode", matchedGroupCode);
                             cleanUsers.add(cleanUser);
                         }
                     }
