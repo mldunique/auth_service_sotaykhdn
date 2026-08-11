@@ -3,6 +3,7 @@ package com.agribank.auth_service.client;
 import com.agribank.auth_service.dto.request.LoginRequest;
 import com.agribank.auth_service.dto.response.UserInfo;
 import com.agribank.auth_service.util.PGPEncryptionUtils;
+import com.agribank.auth_service.exception.AuthenticationException;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -97,7 +98,7 @@ public class RestBEAdminClient implements BEAdminClient {
             userMap.put("actionType", "1");
             userMap.put("prePassword", "");
             userMap.put("fullname", "");
-            userMap.put("otp", "");
+            userMap.put("otp", request.getCaptcha() != null ? request.getCaptcha() : "");
 
             innerRequest.put("user", userMap);
 
@@ -162,7 +163,11 @@ public class RestBEAdminClient implements BEAdminClient {
 
             if (!success || !"00".equals(errorCode)) {
                 log.warn("BEAdmin authentication rejected: {} - {}", errorCode, errorDesc);
-                return null;
+                if ("01".equals(errorCode) || (errorDesc != null && errorDesc.toUpperCase().contains("OTP"))) {
+                    throw new AuthenticationException("invalid OTP");
+                } else {
+                    throw new AuthenticationException("Sai tài khoản hoặc mật khẩu.");
+                }
             }
 
             JsonObject userJson = innerResponse.getAsJsonObject("user");
@@ -216,6 +221,8 @@ public class RestBEAdminClient implements BEAdminClient {
                     .email(email)
                     .build();
 
+        } catch (AuthenticationException e) {
+            throw e;
         } catch (Exception e) {
             log.error("Exception during BEAdmin remote authentication calling: {}", e.getMessage(), e);
             throw new RuntimeException("Lỗi kết nối hoặc xử lý thông tin BEAdmin: " + e.getMessage(), e);

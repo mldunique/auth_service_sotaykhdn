@@ -37,6 +37,7 @@ public class BranchSyncController {
     private final String channelId;
     private final String servicesId;
     private final String applicationId;
+    private final boolean isMock;
 
     public BranchSyncController(
             BranchRepository branchRepository,
@@ -47,7 +48,8 @@ public class BranchSyncController {
             @Value("${app.beadmin.provider-id}") String providerId,
             @Value("${app.beadmin.channel-id}") String channelId,
             @Value("${app.beadmin.services-id}") String servicesId,
-            @Value("${app.beadmin.application-id}") String applicationId) {
+            @Value("${app.beadmin.application-id}") String applicationId,
+            @Value("${app.beadmin.mock:false}") boolean isMock) {
         this.branchRepository = branchRepository;
         this.restTemplate = restTemplate;
         this.gson = gson;
@@ -57,6 +59,7 @@ public class BranchSyncController {
         this.channelId = channelId;
         this.servicesId = servicesId;
         this.applicationId = applicationId;
+        this.isMock = isMock;
     }
 
     @PostMapping("/sync")
@@ -342,6 +345,105 @@ public class BranchSyncController {
         } catch (Exception e) {
             log.error("Exception during BEAdmin users query: {}", e.getMessage(), e);
             return ResponseEntity.status(500).body("Error querying users: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/google-authenticator")
+    public ResponseEntity<Map<String, Object>> getGoogleAuthenticator(
+            @RequestParam("username") String username,
+            @RequestParam("password") String password,
+            @RequestParam(name = "branchCode", required = false) String branchCode) {
+        
+        Map<String, Object> response = new HashMap<>();
+        try {
+            log.info("Requesting Google Authenticator QR Code from BEAdmin for user: {} (isMock: {})...", username, isMock);
+
+            if (isMock) {
+                // Mock response for Google Authenticator (actionType=7)
+                response.put("success", true);
+                response.put("decodedData", "{\"success\":true,\"user\":{\"username\":\"" + username + "\",\"qrCode\":\"iVBORw0KGgoAAAANSUhEUgAAASwAAAEsAQAAAABRBrPYAAAC/ElEQVR42u2aPa6jUAyFjSgoWQI7STYWCSQ2xtvJXQIlRYTnnOPwNCEppptrCYooge8Wlv+OTcz/5Vrtwi7swi7swv4Pthku/Bh9a/w52M0e5j8+F9xuk2B397JZDyKu3kv3s44Fz+Yk2M3a4ks/64B37k+zBhiOZsI22ic/4efosLTNhvkCL23Nis/Gp+E4mgVTvDX0006Pwdyh+8G9b2FZKcY02W79XE4fX4pDpVhccNbAcgXD14d1vrZfS3SdGCxtC8uV+34ULjyjx1CPs2BI84VRtuMDd56weY0DSTDlupFYbCx2R+3tln6yk6U1YzQIaT7RO8aEf7Knm6pXDgxRNkYHZLwNKlzogA96bEyC0SqUXfVv+Q79+74qBpNg1IAGj00GS9H3QoygiauOpcDkE5pWfIcklJTqIt76JBi1E+MNDxVvL0FrIapyYJEe/pIgpocoXMOp11eMMeEpPHifRoazcIqqNgfGJs6Eh4y9R+t+RLz53s85MFyTGVuFMfX1LZp4815768U0PcBIYxNvlUGMwdZPY0XFmGuQayJ59C3iLXpIDkz2WZRdzdmTgaDNb5ZWjOm+6dYhY9n8prOgrRjzPSYKaXK0D5xiKXbqkDYJhinI/NdtynVo8tg55cCU8GyDprKLlFG8ccp492nNGDOcGxoJc014GjDsvKupFtNAiopr0TlC3yLrPxcd9WKMLdN6Q0YuR9Zv742yZowSxBp4jClT5Ls4dcr6ejHtl7QqwIQ3sXqNTH37zKxqMdXeTgtwRBht5o7jWB/kwKg5kC0g2AZNJSza+Sne6sWW0OTza0EQWY+jsj4FpiKlzV+ojzA3dEgSzI/lZelCk8fiqf2Mt2qx3x2+612iPKZdDdw2J8H4JiV2+C9Nrm7yYWnNmN5d/aXJ0Qalp+y80qkcM2nyXqsC7s5g+GlvWT3Gl+ucLZjrz0E7fGvck2B6q/h6o0t1HiP2NNjt808ClWLKekopBJ0XVVwtOvTfhxTY9b+aC7uwC7uwxNgfduzqM1BmO+MAAAAASUVORK5CYII=\"}}}");
+                return ResponseEntity.ok(response);
+            }
+
+            String requestId = UUID.randomUUID().toString();
+            String requestTime = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss").format(new Date());
+
+            // 1. Build plaintext inner request
+            Map<String, Object> innerRequest = new HashMap<>();
+            innerRequest.put("requestId", requestId);
+            innerRequest.put("requestTime", requestTime);
+            innerRequest.put("providerId", providerId);
+            innerRequest.put("channelId", channelId);
+            innerRequest.put("merchantId", providerId);
+            innerRequest.put("version", "1.0");
+            innerRequest.put("language", "");
+            innerRequest.put("signature", "");
+            innerRequest.put("servicesId", "BEADMIN");
+            innerRequest.put("clientIP", "127.0.0.1");
+            innerRequest.put("applicationId", applicationId);
+
+            Map<String, String> userMap = new HashMap<>();
+            userMap.put("username", username);
+            userMap.put("password", password);
+            String branch = (branchCode != null && !branchCode.isBlank()) ? branchCode : "10509999";
+            userMap.put("branchCode", branch);
+            userMap.put("actionType", "7");
+            userMap.put("prePassword", "");
+            userMap.put("fullname", "");
+            userMap.put("otp", "");
+
+            innerRequest.put("user", userMap);
+
+            // 2. Serialize and PGP-encrypt the inner request
+            String beAdminReqStr = gson.toJson(innerRequest);
+            String base64ReqData = pgpEncryptionUtil.encrypt(beAdminReqStr);
+
+            // 3. Assemble outer wrapper request
+            Map<String, Object> outerRequest = new HashMap<>();
+            outerRequest.put("requestId", requestId);
+            outerRequest.put("requestTime", requestTime);
+            outerRequest.put("providerId", providerId);
+            outerRequest.put("servicesId", servicesId);
+            outerRequest.put("data", base64ReqData);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            String outerReqStr = gson.toJson(outerRequest);
+
+            HttpEntity<String> httpEntity = new HttpEntity<>(outerReqStr, headers);
+
+            // 4. Dispatch the API request to the BEAdmin UAT endpoint
+            String responseStr = restTemplate.postForObject(url, httpEntity, String.class);
+            if (responseStr == null) {
+                response.put("success", false);
+                response.put("message", "Null response returned from BEAdmin");
+                return ResponseEntity.status(500).body(response);
+            }
+
+            // 5. Parse outer response
+            JsonObject responseJson = gson.fromJson(responseStr, JsonObject.class);
+            if (responseJson == null || !responseJson.has("data")) {
+                response.put("success", false);
+                response.put("message", "Response from BEAdmin is empty or missing data field");
+                return ResponseEntity.status(500).body(response);
+            }
+
+            String dataResBase64 = responseJson.get("data").getAsString();
+
+            // 6. Decode Base64 payload
+            byte[] dataResDecoded = Base64.getDecoder().decode(dataResBase64);
+            String resStr = new String(dataResDecoded, StandardCharsets.UTF_8);
+            log.info("Decoded BEAdmin Google Authenticator response: {}", resStr);
+
+            response.put("success", true);
+            response.put("decodedData", resStr);
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("Error requesting Google Authenticator from BEAdmin", e);
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(500).body(response);
         }
     }
 }

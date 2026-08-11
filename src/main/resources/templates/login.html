@@ -7,7 +7,7 @@
     <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet">
     <style>
         :root {
             --primary-color: #991f38;   /* Agribank Dark Red */
@@ -301,6 +301,180 @@
                 display: none;
             }
         }
+
+        /* OTP Digit Input Box Styles */
+        .captcha-input-container {
+            display: flex;
+            gap: 8px;
+        }
+        .captcha-digit-input {
+            width: 44px;
+            height: 44px;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            text-align: center;
+            font-weight: 700;
+            font-size: 18px;
+            color: var(--text-dark);
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            background-color: #ffffff;
+        }
+        .captcha-digit-input:focus {
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 3px rgba(11, 130, 70, 0.12);
+        }
+        .captcha-digit-input.error-border {
+            border-color: #d12020 !important;
+            background-color: #fef2f2 !important;
+        }
+
+        /* Modal styles */
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(2px);
+        }
+
+        .modal-card {
+            background-color: #ffffff;
+            width: 100%;
+            max-width: 460px;
+            border-radius: 16px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            animation: modal-show 0.2s ease-out;
+        }
+
+        @keyframes modal-show {
+            from { transform: scale(0.95); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .modal-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title-row {
+            display: flex;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #171717;
+        }
+
+        .modal-close-btn {
+            background: none;
+            border: none;
+            font-size: 22px;
+            color: #8C8C8C;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .qr-icon-circle {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background-color: #FEF3F2;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+
+        .qr-instruction-text {
+            font-size: 14px;
+            color: #475467;
+            font-weight: 400;
+            line-height: 1.5;
+            max-width: 320px;
+            margin: 0 auto 20px;
+        }
+
+        .qr-code-frame {
+            border: 1.5px solid #F2F4F7;
+            border-radius: 12px;
+            padding: 16px;
+            display: inline-block;
+            margin-bottom: 24px;
+            background-color: #ffffff;
+        }
+
+        .ga-help-banner {
+            background-color: #F8F9FA;
+            border-radius: 8px;
+            padding: 12px 16px;
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            max-width: 380px;
+            margin: 0 auto;
+        }
+
+        .btn-ga-close {
+            background: #ffffff;
+            border: 1px solid #D5D7DA;
+            border-radius: 8px;
+            padding: 10px 24px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--primary-color);
+            cursor: pointer;
+            transition: background 0.15s;
+            width: 100%;
+            max-width: 100px;
+        }
+
+        .btn-ga-close:hover {
+            background: #F9FAF5;
+        }
+
+        /* Spinner for loading state */
+        .spinner-loader {
+            width: 36px;
+            height: 36px;
+            border: 3.5px solid #E5E7EB;
+            border-top: 3.5px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .ga-link {
+            font-size: 13px;
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.15s;
+        }
+
+        .ga-link:hover {
+            color: var(--primary-dark);
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -332,7 +506,7 @@
                 <span th:text="${error}">Thông tin đăng nhập sai</span>
             </div>
 
-            <form th:action="@{/login}" method="post">
+            <form th:action="@{/login}" method="post" id="loginForm" onsubmit="updateHiddenCaptcha()">
                 <div class="form-group">
                     <label for="username">Tên đăng nhập<span class="required">*</span></label>
                     <div class="input-wrapper">
@@ -362,11 +536,20 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="captcha">Mã xác thực</label>
-                    <div class="captcha-row">
-                        <input type="text" id="captcha" name="captcha" class="form-control" placeholder="Nhập mã xác thực" autocomplete="off">
-                        <!-- Replace with a real generated captcha image server-side, e.g. th:src="@{/captcha}" -->
-                        <div class="captcha-box">097643</div>
+                    <label style="margin-bottom: 8px;">Mã xác thực</label>
+                    <!-- Captcha Input (6 boxes) - 1 single row only -->
+                    <div class="captcha-input-container">
+                        <input type="text" maxlength="1" class="captcha-digit-input" id="otp-0" oninput="handleOtpInput(this, 0)" onkeydown="handleOtpKeydown(this, 0, event)" autocomplete="off" />
+                        <input type="text" maxlength="1" class="captcha-digit-input" id="otp-1" oninput="handleOtpInput(this, 1)" onkeydown="handleOtpKeydown(this, 1, event)" autocomplete="off" />
+                        <input type="text" maxlength="1" class="captcha-digit-input" id="otp-2" oninput="handleOtpInput(this, 2)" onkeydown="handleOtpKeydown(this, 2, event)" autocomplete="off" />
+                        <input type="text" maxlength="1" class="captcha-digit-input" id="otp-3" oninput="handleOtpInput(this, 3)" onkeydown="handleOtpKeydown(this, 3, event)" autocomplete="off" />
+                        <input type="text" maxlength="1" class="captcha-digit-input" id="otp-4" oninput="handleOtpInput(this, 4)" onkeydown="handleOtpKeydown(this, 4, event)" autocomplete="off" />
+                        <input type="text" maxlength="1" class="captcha-digit-input" id="otp-5" oninput="handleOtpInput(this, 5)" onkeydown="handleOtpKeydown(this, 5, event)" autocomplete="off" />
+                    </div>
+                    <input type="hidden" id="captcha" name="captcha" />
+                    
+                    <div style="margin-top: 10px;">
+                        <a href="javascript:void(0)" class="ga-link" onclick="openGaModal()">Lấy mã Google Authenticator</a>
                     </div>
                 </div>
 
@@ -412,7 +595,66 @@
 
 </div>
 
-<script>
+<!-- Modal Xác thực hai lớp -->
+<div id="gaModal" class="modal-backdrop" style="display: none;">
+    <div class="modal-card">
+        <div class="modal-header" style="border-bottom: none; padding-bottom: 0;">
+            <div class="modal-title-row">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#B42318" stroke-width="2.5" style="vertical-align: middle; margin-right: 8px;">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+                <span class="modal-title">Xác thực hai lớp</span>
+            </div>
+            <button type="button" class="modal-close-btn" onclick="closeGaModal()">&#215;</button>
+        </div>
+        <div class="modal-body" style="text-align: center; padding: 24px 20px;">
+            <!-- Loading State -->
+            <div id="gaLoading" style="display: none; padding: 40px 0;">
+                <div class="spinner-loader"></div>
+                <p style="margin-top: 16px; color: var(--text-muted); font-size: 14px; font-weight: 500;">Đang liên kết Google Authenticator...</p>
+            </div>
+            
+            <!-- Content Display -->
+            <div id="gaContent" style="display: block;">
+                <div class="qr-icon-circle">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#D92D20" stroke-width="2" style="vertical-align: middle;">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                    </svg>
+                </div>
+                
+                <p class="qr-instruction-text">
+                    Sử dụng ứng dụng Google Authenticator để quét mã QR bên dưới
+                </p>
+                
+                <div class="qr-code-frame">
+                    <img id="gaQrCodeImg" src="" alt="Google Authenticator QR Code" style="display: none; width: 220px; height: 220px; object-fit: contain; margin: 0 auto;" />
+                    <textarea id="gaFallbackText" class="form-control" style="display: none; width: 260px; height: 120px; font-family: monospace; font-size: 11.5px; background-color: #f9fafb; resize: none; margin: 0 auto;" readonly></textarea>
+                </div>
+
+                <div class="ga-help-banner">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#475467" stroke-width="2" style="flex-shrink: 0; margin-top: 2px;">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                    <span style="font-size: 12.5px; color: #344054; text-align: left;">
+                        Chưa biết cách lấy mã Google Authenticator? <a href="#" style="color: #0b8246; text-decoration: underline; font-weight: 600;">Tải tài liệu hướng dẫn</a>
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer" style="background-color: #ffffff; padding: 16px 20px; border-top: none; display: flex; justify-content: flex-end;">
+            <button type="button" class="btn-ga-close" onclick="closeGaModal()">Đóng</button>
+        </div>
+    </div>
+</div>
+
+<script th:inline="javascript">
+/*<![CDATA[*/
     function togglePassword() {
         const pwd = document.getElementById('password');
         const eye = document.getElementById('eye-icon');
@@ -447,6 +689,146 @@
                 unitNameInput.value = '';
             });
     });
+
+    // --- OTP INPUT LOGIC ---
+    function updateHiddenCaptcha() {
+        let code = '';
+        for (let i = 0; i < 6; i++) {
+            code += document.getElementById('otp-' + i).value;
+        }
+        document.getElementById('captcha').value = code;
+    }
+
+    function clearErrorBorders() {
+        document.querySelectorAll('.captcha-digit-input').forEach(input => {
+            input.classList.remove('error-border');
+        });
+    }
+
+    function handleOtpInput(input, index) {
+        input.value = input.value.replace(/[^0-9]/g, '');
+        updateHiddenCaptcha();
+        clearErrorBorders();
+
+        if (input.value.length === 1 && index < 5) {
+            document.getElementById('otp-' + (index + 1)).focus();
+        }
+    }
+
+    function handleOtpKeydown(input, index, event) {
+        if (event.key === 'Backspace' && input.value.length === 0 && index > 0) {
+            const prevInput = document.getElementById('otp-' + (index - 1));
+            prevInput.focus();
+            prevInput.value = '';
+            updateHiddenCaptcha();
+        }
+    }
+
+    // Handle copy-pasting 6 digits
+    document.querySelectorAll('.captcha-digit-input').forEach((input, index) => {
+        input.addEventListener('paste', function(e) {
+            const pastedData = e.clipboardData.getData('text').trim();
+            if (/^\d{6}$/.test(pastedData)) {
+                for (let i = 0; i < 6; i++) {
+                    const el = document.getElementById('otp-' + i);
+                    el.value = pastedData[i];
+                }
+                document.getElementById('otp-5').focus();
+                updateHiddenCaptcha();
+                e.preventDefault();
+            }
+        });
+    });
+
+    // Highlight inputs on page load if backend login failed
+    window.addEventListener('DOMContentLoaded', () => {
+        const errorAlert = document.querySelector('.error-message');
+        if (errorAlert) {
+            document.querySelectorAll('.captcha-digit-input').forEach(input => {
+                input.classList.add('error-border');
+            });
+        }
+        updateHiddenCaptcha();
+    });
+
+    // --- GOOGLE AUTHENTICATOR MODAL LOGIC ---
+    function openGaModal() {
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value;
+        const unitCode = document.getElementById('unitCode').value.trim();
+
+        if (!username || !password) {
+            alert('Vui lòng nhập Tên đăng nhập và Mật khẩu trước khi lấy mã Google Authenticator.');
+            return;
+        }
+
+        // Show Modal in Loading State
+        document.getElementById('gaContent').style.display = 'none';
+        document.getElementById('gaLoading').style.display = 'block';
+        document.getElementById('gaModal').style.display = 'flex';
+
+        // Call API Post request
+        const formData = new URLSearchParams();
+        formData.append('username', username);
+        formData.append('password', password);
+        formData.append('branchCode', unitCode);
+
+        fetch('/api/v1/branches/google-authenticator', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById('gaLoading').style.display = 'none';
+            document.getElementById('gaContent').style.display = 'block';
+
+            if (data && data.success) {
+                let qrCode = '';
+                try {
+                    const resObj = JSON.parse(data.decodedData);
+                    if (resObj && resObj.user && resObj.user.qrCode) {
+                        qrCode = resObj.user.qrCode;
+                    } else if (resObj && resObj.qrCode) {
+                        qrCode = resObj.qrCode;
+                    }
+                } catch (e) {
+                    console.error("Failed to parse decodedData", e);
+                }
+
+                if (qrCode) {
+                    // Show QR Code image
+                    document.getElementById('gaQrCodeImg').src = 'data:image/png;base64,' + qrCode;
+                    document.getElementById('gaQrCodeImg').style.display = 'block';
+                    document.getElementById('gaFallbackText').style.display = 'none';
+                } else {
+                    // Fallback to decoded text
+                    document.getElementById('gaQrCodeImg').style.display = 'none';
+                    document.getElementById('gaFallbackText').value = data.decodedData;
+                    document.getElementById('gaFallbackText').style.display = 'block';
+                }
+            } else {
+                document.getElementById('gaQrCodeImg').style.display = 'none';
+                document.getElementById('gaFallbackText').value = data.message || 'Lấy mã thất bại';
+                document.getElementById('gaFallbackText').style.display = 'block';
+            }
+        })
+        .catch(err => {
+            document.getElementById('gaLoading').style.display = 'none';
+            document.getElementById('gaContent').style.display = 'block';
+            document.getElementById('gaQrCodeImg').style.display = 'none';
+            document.getElementById('gaFallbackText').value = 'Lỗi hệ thống không thể kết nối tới server.';
+            document.getElementById('gaFallbackText').style.display = 'block';
+            console.error(err);
+        });
+    }
+
+    function closeGaModal() {
+        document.getElementById('gaModal').style.display = 'none';
+    }
+/*]]>*/
 </script>
 
 </body>

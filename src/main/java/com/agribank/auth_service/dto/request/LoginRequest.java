@@ -18,4 +18,6 @@ public class LoginRequest {
 
     private String unitCode;
 
+    private String captcha;
+
 }
