@@ -95,7 +95,7 @@ public class RestBEAdminClient implements BEAdminClient {
                     ? request.getUnitCode() 
                     : defaultBranch;
             userMap.put("branchCode", branch);
-            userMap.put("actionType", "1");
+            userMap.put("actionType", "6");
             userMap.put("prePassword", "");
             userMap.put("fullname", "");
             userMap.put("otp", request.getCaptcha() != null ? request.getCaptcha() : "");
