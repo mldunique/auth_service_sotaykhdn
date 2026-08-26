@@ -183,23 +183,39 @@ public class RestBEAdminClient implements BEAdminClient {
             String depCode = userJson.has("depCode") ? userJson.get("depCode").getAsString() : "";
             String email = userJson.has("email") ? userJson.get("email").getAsString() : "";
 
-            // Map roles & permissions
+            // Map roles & permissions from userJson or innerResponse
             String role = "USER";
             List<String> permissions = new ArrayList<>();
 
-            if (innerResponse.has("listGrantRole")) {
-                JsonArray rolesArray = innerResponse.getAsJsonArray("listGrantRole");
-                if (rolesArray != null && rolesArray.size() > 0) {
-                    JsonObject firstRole = rolesArray.get(0).getAsJsonObject();
-                    if (firstRole.has("groupCode")) {
-                        role = firstRole.get("groupCode").getAsString();
+            JsonArray rolesArray = null;
+            if (userJson.has("listGrantRole") && !userJson.get("listGrantRole").isJsonNull()) {
+                rolesArray = userJson.getAsJsonArray("listGrantRole");
+            } else if (innerResponse.has("listGrantRole") && !innerResponse.get("listGrantRole").isJsonNull()) {
+                rolesArray = innerResponse.getAsJsonArray("listGrantRole");
+            }
+
+            if (rolesArray != null && rolesArray.size() > 0) {
+                JsonObject firstRole = rolesArray.get(0).getAsJsonObject();
+                if (firstRole.has("groupCode")) {
+                    role = firstRole.get("groupCode").getAsString();
+                }
+                for (JsonElement roleElement : rolesArray) {
+                    JsonObject roleObj = roleElement.getAsJsonObject();
+                    if (roleObj.has("groupCode")) {
+                        permissions.add(roleObj.get("groupCode").getAsString());
                     }
-                    for (JsonElement roleElement : rolesArray) {
-                        JsonObject roleObj = roleElement.getAsJsonObject();
-                        if (roleObj.has("groupCode")) {
-                            permissions.add(roleObj.get("groupCode").getAsString());
-                        }
-                    }
+                }
+            }
+
+            // Fallback: If role is still USER or empty, infer role from username (e.g., 37ETK081 -> ETK08)
+            if ("USER".equalsIgnoreCase(role) || role == null || role.isBlank()) {
+                String u = username.toUpperCase();
+                if (u.contains("ETK08")) {
+                    role = "ETK08";
+                } else if (u.contains("ETN08")) {
+                    role = "ETN08";
+                } else if (u.contains("ESA08") || u.contains("ADMIN")) {
+                    role = "ESA08";
                 }
             }
 

@@ -1,0 +1,7 @@
+services:
+  auth-service:
+    build: .
+    container_name: auth-service
+    image: auth-service:latest
+    ports:
+      - "8080:8080"

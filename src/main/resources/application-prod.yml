@@ -1,9 +1,9 @@
 app:
   security:
     jwt:
-      cookie-secure: true
-      cookie-domain: .agribank.com.vn
-      redirect-url: https://sotaykhdn.agribank.com.vn/
+      cookie-secure: false
+      cookie-domain: ""
+      redirect-url: http://10.0.175.10:5173/
   beadmin:
     mock: false
     url: http://10.0.7.41:8302/agribank/gateway/api/systems/centeralize-login

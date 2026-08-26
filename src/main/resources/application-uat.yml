@@ -1,9 +1,9 @@
 app:
   security:
     jwt:
-      cookie-secure: true
-      cookie-domain: .sotaykhdn.agribank.com.vn
-      redirect-url: https://uat-sotaykhdn.agribank.com.vn/
+      cookie-secure: false
+      cookie-domain: ""
+      redirect-url: http://10.0.175.10:5173/
   beadmin:
     mock: false
     url: http://10.0.7.41:8302/agribank/gateway/api/systems/centeralize-login
@@ -12,3 +12,19 @@ app:
     services-id: SOTAY
     application-id: BEADMIN
     default-branch: 10509999
+
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:oracle:thin:@10.0.175.141:1636/PSTDT}
+    username: ${SPRING_DATASOURCE_USERNAME:APP_STDT}
+    password: ${SPRING_DATASOURCE_PASSWORD:Agribank!20082026}
+    driver-class-name: oracle.jdbc.OracleDriver
+  jpa:
+    database-platform: org.hibernate.dialect.OracleDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.OracleDialect

@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 /**
  * Controller for rendering the login view.
  */
-@Controller
+// @Controller (Merged into AuthController)
 public class LoginController {
 
     private final String redirectUrl;

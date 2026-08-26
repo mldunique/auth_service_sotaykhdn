@@ -15,14 +15,19 @@ app:
 
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3306/agrinote_db
-    username: root
-    password: 'Mkac@12345'
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${SPRING_DATASOURCE_URL:jdbc:oracle:thin:@10.63.29.141:1521/ORCLPDB1}
+    username: ${SPRING_DATASOURCE_USERNAME:sotaypdb1}
+    password: ${SPRING_DATASOURCE_PASSWORD:Mkac@12345}
+#    url: ${SPRING_DATASOURCE_URL:jdbc:oracle:thin:@10.0.175.141:1636/PSTDT}
+#    username: ${SPRING_DATASOURCE_USERNAME:APP_STDT}
+#    password: ${SPRING_DATASOURCE_PASSWORD:Agribank!20082026}
+    driver-class-name: oracle.jdbc.OracleDriver
   jpa:
+    database-platform: org.hibernate.dialect.OracleDialect
     hibernate:
       ddl-auto: update
     show-sql: true
     properties:
       hibernate:
         format_sql: true
+        dialect: org.hibernate.dialect.OracleDialect

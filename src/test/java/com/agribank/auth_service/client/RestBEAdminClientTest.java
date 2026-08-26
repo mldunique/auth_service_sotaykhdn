@@ -55,7 +55,7 @@ public class RestBEAdminClientTest {
     @Test
     public void testAuthenticate_Success() throws Exception {
         // 1. Arrange
-        LoginRequest loginRequest = new LoginRequest("NAMNH", "123456aA@", null);
+        LoginRequest loginRequest = new LoginRequest("NAMNH", "123456aA@", "10509999", "123456");
 
         // Prepare mock inner response JSON
         JsonObject innerResponseJson = new JsonObject();
@@ -126,7 +126,7 @@ public class RestBEAdminClientTest {
     @Test
     public void testAuthenticate_FailedCredentials() throws Exception {
         // 1. Arrange
-        LoginRequest loginRequest = new LoginRequest("NAMNH", "wrongpassword", null);
+        LoginRequest loginRequest = new LoginRequest("NAMNH", "wrongpassword", "10509999", "123456");
 
         // Prepare mock inner response JSON indicating failure
         JsonObject innerResponseJson = new JsonObject();

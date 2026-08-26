@@ -47,6 +47,31 @@ public class AuthController {
         this.cookieDomain = cookieDomain;
     }
 
+    @GetMapping("/login")
+    public String showLoginForm(@org.springframework.web.bind.annotation.RequestParam(name = "redirect_uri", required = false) String redirectUri,
+                                HttpServletRequest request,
+                                Model model) {
+        if (isValidRedirectUri(redirectUri)) {
+            String sanitized = sanitizeRedirectUri(redirectUri);
+            request.getSession().setAttribute("redirect_uri", sanitized);
+            model.addAttribute("redirect_uri", sanitized);
+        } else {
+            model.addAttribute("redirect_uri", redirectUrl);
+        }
+
+        org.springframework.security.core.Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated() && !(auth instanceof org.springframework.security.authentication.AnonymousAuthenticationToken)) {
+            String targetUrl = redirectUrl;
+            String sessionRedirect = (String) request.getSession().getAttribute("redirect_uri");
+            if (isValidRedirectUri(sessionRedirect)) {
+                targetUrl = sanitizeRedirectUri(sessionRedirect);
+            }
+            return "redirect:" + targetUrl;
+        }
+
+        return "login";
+    }
+
     /**
      * Authenticates username and password. On success, generates a JWT
      * and sets it in an HttpOnly cookie, then redirects to the target page or frontend.
@@ -54,12 +79,14 @@ public class AuthController {
     @PostMapping("/login")
     public String login(@Valid LoginRequest request,
                         BindingResult bindingResult,
+                        @org.springframework.web.bind.annotation.RequestParam(name = "redirect_uri", required = false) String paramRedirectUri,
                         HttpServletRequest httpRequest,
                         HttpServletResponse response,
                         Model model) {
 
         if (bindingResult.hasErrors()) {
             model.addAttribute("error", bindingResult.getAllErrors().get(0).getDefaultMessage());
+            model.addAttribute("redirect_uri", paramRedirectUri);
             return "login";
         }
 
@@ -79,26 +106,53 @@ public class AuthController {
 
             response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
-            // Determine redirect target URL: Check redirect_uri parameter first, then SavedRequest, then fallback
+            // Determine redirect target URL: Check parameter first, then session, then fallback
             String targetUrl = redirectUrl;
-            String sessionRedirectUri = (String) httpRequest.getSession().getAttribute("redirect_uri");
-            
-            if (isValidRedirectUri(sessionRedirectUri)) {
-                targetUrl = sessionRedirectUri;
-                httpRequest.getSession().removeAttribute("redirect_uri");
+            if (isValidRedirectUri(paramRedirectUri)) {
+                targetUrl = sanitizeRedirectUri(paramRedirectUri);
             } else {
-                org.springframework.security.web.savedrequest.SavedRequest savedRequest = 
-                        requestCache.getRequest(httpRequest, response);
-                if (savedRequest != null) {
-                    targetUrl = savedRequest.getRedirectUrl();
+                String sessionRedirectUri = (String) httpRequest.getSession().getAttribute("redirect_uri");
+                if (isValidRedirectUri(sessionRedirectUri)) {
+                    targetUrl = sanitizeRedirectUri(sessionRedirectUri);
+                    httpRequest.getSession().removeAttribute("redirect_uri");
+                } else {
+                    org.springframework.security.web.savedrequest.SavedRequest savedRequest = 
+                            requestCache.getRequest(httpRequest, response);
+                    if (savedRequest != null) {
+                        targetUrl = savedRequest.getRedirectUrl();
+                    }
                 }
+            }
+
+            // Append token to targetUrl query parameter for cross-origin/cross-port support
+            if (targetUrl.contains("?")) {
+                targetUrl += "&token=" + loginResponse.getToken();
+            } else {
+                targetUrl += "?token=" + loginResponse.getToken();
             }
 
             return "redirect:" + targetUrl;
         }
 
         model.addAttribute("error", loginResponse.getMessage());
+        model.addAttribute("redirect_uri", paramRedirectUri);
         return "login";
+    }
+
+    private String sanitizeRedirectUri(String uri) {
+        if (uri == null || uri.isBlank()) {
+            return redirectUrl;
+        }
+        return uri;
+    }
+
+    private String extractHostAndPort(String url) {
+        try {
+            java.net.URI uri = new java.net.URI(url);
+            return uri.getHost() + (uri.getPort() != -1 ? ":" + uri.getPort() : "");
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     private boolean isValidRedirectUri(String uri) {
@@ -111,8 +165,7 @@ public class AuthController {
             if (host == null) {
                 return false;
             }
-            // Allow localhost and any agribank.com.vn subdomain to prevent Open Redirect attacks
-            return host.equals("localhost") || host.endsWith("agribank.com.vn");
+            return host.equals("localhost") || host.endsWith("agribank.com.vn") || host.matches("^\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}$");
         } catch (Exception e) {
             return false;
         }

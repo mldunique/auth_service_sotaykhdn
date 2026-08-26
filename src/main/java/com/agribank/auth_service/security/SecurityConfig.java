@@ -133,11 +133,11 @@ public class SecurityConfig {
     @Bean
     public org.springframework.web.cors.CorsConfigurationSource corsConfigurationSource() {
         org.springframework.web.cors.CorsConfiguration configuration = new org.springframework.web.cors.CorsConfiguration();
-        // Restrict allowed origins to local react application and production domain
-        configuration.setAllowedOrigins(java.util.List.of("http://localhost:5173", "https://sotaykhdn.agribank.com.vn", "https://uat-sotaykhdn.agribank.com.vn"));
+        // Cho phép origin linh hoạt bao gồm cả Localhost lẫn UAT (10.0.175.10)
+        configuration.setAllowedOriginPatterns(java.util.List.of("*"));
         configuration.setAllowedMethods(java.util.List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(java.util.List.of("*"));
-        configuration.setExposedHeaders(java.util.List.of("Set-Cookie"));
+        configuration.setExposedHeaders(java.util.List.of("Set-Cookie", "Authorization"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
 
