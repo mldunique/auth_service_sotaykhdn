@@ -96,7 +96,21 @@ public class SecurityConfig {
                             }
                             ResponseCookie cookie = cookieBuilder.build();
                             response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
-                            response.sendRedirect(request.getContextPath() + "/login");
+                            
+                            String hostHeader = request.getHeader("Host");
+                            String scheme = request.getScheme();
+                            String targetUrl;
+                            if (hostHeader != null && !hostHeader.isBlank()) {
+                                targetUrl = scheme + "://" + hostHeader + request.getContextPath() + "/login";
+                            } else {
+                                targetUrl = request.getContextPath() + "/login";
+                            }
+
+                            String redirectUri = request.getParameter("redirect_uri");
+                            if (redirectUri != null && !redirectUri.isBlank()) {
+                                targetUrl += (targetUrl.contains("?") ? "&" : "?") + "redirect_uri=" + java.net.URLEncoder.encode(redirectUri, java.nio.charset.StandardCharsets.UTF_8);
+                            }
+                            response.sendRedirect(targetUrl);
                         })
                 )
                 
@@ -125,7 +139,15 @@ public class SecurityConfig {
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 response.getWriter().write("{\"error\": \"Unauthorized\", \"message\": \"" + authException.getMessage() + "\"}");
             } else {
-                response.sendRedirect(request.getContextPath() + "/login");
+                String hostHeader = request.getHeader("Host");
+                String scheme = request.getScheme();
+                String targetUrl;
+                if (hostHeader != null && !hostHeader.isBlank()) {
+                    targetUrl = scheme + "://" + hostHeader + request.getContextPath() + "/login";
+                } else {
+                    targetUrl = request.getContextPath() + "/login";
+                }
+                response.sendRedirect(targetUrl);
             }
         };
     }
