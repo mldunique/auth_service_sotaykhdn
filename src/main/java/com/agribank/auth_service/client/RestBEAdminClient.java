@@ -29,7 +29,6 @@ import java.util.*;
  * Live BEAdminClient communicating with Agribank BEAdmin via encrypted REST API calls.
  */
 @Component
-@ConditionalOnProperty(name = "app.beadmin.mock", havingValue = "false")
 public class RestBEAdminClient implements BEAdminClient {
 
     private static final Logger log = LoggerFactory.getLogger(RestBEAdminClient.class);
@@ -49,12 +48,12 @@ public class RestBEAdminClient implements BEAdminClient {
             RestTemplate restTemplate,
             Gson gson,
             PGPEncryptionUtils pgpEncryptionUtil,
-            @Value("${app.beadmin.url}") String url,
-            @Value("${app.beadmin.provider-id}") String providerId,
-            @Value("${app.beadmin.channel-id}") String channelId,
-            @Value("${app.beadmin.services-id}") String servicesId,
-            @Value("${app.beadmin.application-id}") String applicationId,
-            @Value("${app.beadmin.default-branch}") String defaultBranch) {
+            @Value("${app.beadmin.url:http://10.0.7.41:8302/agribank/gateway/api/systems/centeralize-login}") String url,
+            @Value("${app.beadmin.provider-id:SOTAY}") String providerId,
+            @Value("${app.beadmin.channel-id:SOTAY}") String channelId,
+            @Value("${app.beadmin.services-id:SOTAY}") String servicesId,
+            @Value("${app.beadmin.application-id:BEADMIN}") String applicationId,
+            @Value("${app.beadmin.default-branch:10509999}") String defaultBranch) {
         this.restTemplate = restTemplate;
         this.gson = gson;
         this.pgpEncryptionUtil = pgpEncryptionUtil;

@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 public class AuthController {
 
     private final AuthService authService;
+    private final com.agribank.auth_service.config.DocumentConfigProperties documentConfigProperties;
     private final String cookieName;
     private final long expirationMs;
     private final String redirectUrl;
@@ -34,12 +35,14 @@ public class AuthController {
             new org.springframework.security.web.savedrequest.HttpSessionRequestCache();
 
     public AuthController(AuthService authService,
+                          com.agribank.auth_service.config.DocumentConfigProperties documentConfigProperties,
                           @Value("${app.security.jwt.cookie-name:accessToken}") String cookieName,
                           @Value("${app.security.jwt.expiration-ms:3600000}") long expirationMs,
                           @Value("${app.security.jwt.redirect-url:http://localhost:5173/}") String redirectUrl,
                           @Value("${app.security.jwt.cookie-secure:false}") boolean cookieSecure,
                           @Value("${app.security.jwt.cookie-domain:localhost}") String cookieDomain) {
         this.authService = authService;
+        this.documentConfigProperties = documentConfigProperties;
         this.cookieName = cookieName;
         this.expirationMs = expirationMs;
         this.redirectUrl = redirectUrl;
@@ -57,6 +60,11 @@ public class AuthController {
             model.addAttribute("redirect_uri", sanitized);
         } else {
             model.addAttribute("redirect_uri", redirectUrl);
+        }
+
+        if (documentConfigProperties != null) {
+            model.addAttribute("documentItems", documentConfigProperties.getItems());
+            model.addAttribute("documentZipUrl", documentConfigProperties.getZipUrl());
         }
 
         org.springframework.security.core.Authentication auth = SecurityContextHolder.getContext().getAuthentication();

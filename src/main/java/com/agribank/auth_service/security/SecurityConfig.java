@@ -76,7 +76,8 @@ public class SecurityConfig {
                                 "/**/*.gif",
                                 "/**/*.svg",
                                 "/**/*.ico",
-                                "/api/v1/branches/**"
+                                "/api/v1/branches/**",
+                                "/api/v1/mock-beadmin/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

@@ -4,8 +4,27 @@ app:
       cookie-secure: false
       cookie-domain: localhost
       redirect-url: http://localhost:5173/
+  documents:
+    zip-url: "/documents/tat-ca-tai-lieu.zip"
+    items:
+      - name: "Hướng dẫn sử dụng hệ thống"
+        size: "200 KB"
+        type: "pdf"
+        url: "/documents/huong-dan-su-dung.pdf"
+      - name: "Hướng dẫn sử dụng hệ thống"
+        size: "200 KB"
+        type: "doc"
+        url: "/documents/huong-dan-su-dung.docx"
+      - name: "Hướng dẫn sử dụng hệ thống"
+        size: "200 KB"
+        type: "pdf"
+        url: "/documents/huong-dan-su-dung-v2.pdf"
+      - name: "Hướng dẫn sử dụng hệ thống"
+        size: "200 KB"
+        type: "pdf"
+        url: "/documents/huong-dan-su-dung-v3.pdf"
   beadmin:
-    mock: false
+    mock: true
     url: http://10.0.7.41:8302/agribank/gateway/api/systems/centeralize-login
     provider-id: SOTAY
     channel-id: SOTAY

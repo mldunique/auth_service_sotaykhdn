@@ -12,7 +12,28 @@ spring:
     suffix: .html
 
 app:
+  beadmin:
+    mock: true
   security:
     jwt:
       expiration-ms: 3600000 # 1 hour
       cookie-name: accessToken
+  documents:
+    zip-url: "/documents/tat-ca-tai-lieu.zip"
+    items:
+      - name: "Hướng dẫn sử dụng hệ thống"
+        size: "200 KB"
+        type: "pdf"
+        url: "/documents/huong-dan-su-dung.pdf"
+      - name: "Hướng dẫn sử dụng hệ thống"
+        size: "200 KB"
+        type: "doc"
+        url: "/documents/huong-dan-su-dung.docx"
+      - name: "Hướng dẫn sử dụng hệ thống"
+        size: "200 KB"
+        type: "pdf"
+        url: "/documents/huong-dan-su-dung-v2.pdf"
+      - name: "Hướng dẫn sử dụng hệ thống"
+        size: "200 KB"
+        type: "pdf"
+        url: "/documents/huong-dan-su-dung-v3.pdf"

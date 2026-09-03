@@ -7,4 +7,7 @@ public interface BeAdminService {
 
     UserInfo authenticate(LoginRequest request);
 
+    boolean isMockEnabled();
+
+    void setMockEnabled(boolean enabled);
 }
