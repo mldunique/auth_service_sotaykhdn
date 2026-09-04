@@ -20,42 +20,42 @@ public class MockBEAdminClient implements BEAdminClient {
     private void initMockUsers() {
         // 1. 99ESA081 - Ban Ngân hàng số - NHS quản trị hệ thống
         mockUsers.put("99ESA081", new MockUserData(
-                "99ESA081", "Abc123456$", "Nguyễn Văn ESA (NHS Quản trị)", "ESA08",
+                "99ESA081", "Abc123456$", "Đinh Tiến Lâm", "ESA08",
                 List.of("PRODUCT_READ", "PRODUCT_WRITE", "CRITERIA_APPROVE", "USER_MANAGEMENT", "ESA08"),
                 "10509999", "1050", "99esa081@agribank.com.vn"
         ));
 
         // 2. 99ECV081 - Ban Ngân hàng số - Tra cứu nội dung đã publish trên hệ thống
         mockUsers.put("99ECV081", new MockUserData(
-                "99ECV081", "Abc123456$", "Trần Văn ECV (Tra cứu Publish)", "ECV08",
+                "99ECV081", "Abc123456$", "Bùi Phi Anh", "ECV08",
                 List.of("PRODUCT_READ", "ECV08"),
                 "10509999", "1050", "99ecv081@agribank.com.vn"
         ));
 
         // 3. 37ETK081 - Ban Khách hàng doanh nghiệp - Kiểm soát viên
         mockUsers.put("37ETK081", new MockUserData(
-                "37ETK081", "Abc123456$", "Lê Văn ETK (Kiểm soát viên 1)", "ETK08",
+                "37ETK081", "Abc123456$", "Lê Văn Tuấn", "ETK08",
                 List.of("PRODUCT_READ", "CRITERIA_APPROVE", "PRODUCT_APPROVE", "ETK08"),
                 "10500037", "1050", "37etk081@agribank.com.vn"
         ));
 
         // 4. 37ETK082 - Ban Khách hàng doanh nghiệp - Kiểm soát viên
         mockUsers.put("37ETK082", new MockUserData(
-                "37ETK082", "Abc123456$", "Phạm Văn ETK (Kiểm soát viên 2)", "ETK08",
+                "37ETK082", "Abc123456$", "Lê Thị Huyền Trang", "ETK08",
                 List.of("PRODUCT_READ", "CRITERIA_APPROVE", "PRODUCT_APPROVE", "ETK08"),
                 "10500037", "1050", "37etk082@agribank.com.vn"
         ));
 
         // 5. 37ETN081 - Ban Khách hàng doanh nghiệp - Cán bộ quản lý nội dung
         mockUsers.put("37ETN081", new MockUserData(
-                "37ETN081", "Abc123456$", "Hoàng Văn ETN (Quản lý nội dung 1)", "ETN08",
+                "37ETN081", "Abc123456$", "Phạm Thùy Linh", "ETN08",
                 List.of("PRODUCT_READ", "PRODUCT_WRITE", "ETN08"),
                 "10500037", "1050", "37etn081@agribank.com.vn"
         ));
 
         // 6. 37ETN082 - Ban Khách hàng doanh nghiệp - Cán bộ quản lý nội dung
         mockUsers.put("37ETN082", new MockUserData(
-                "37ETN082", "Abc123456$", "Vũ Văn ETN (Quản lý nội dung 2)", "ETN08",
+                "37ETN082", "Abc123456$", "Nguyễn Hải Long", "ETN08",
                 List.of("PRODUCT_READ", "PRODUCT_WRITE", "ETN08"),
                 "10500037", "1050", "37etn082@agribank.com.vn"
         ));
