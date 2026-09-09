@@ -416,7 +416,7 @@ public class BranchSyncController {
             String responseStr = restTemplate.postForObject(url, httpEntity, String.class);
             if (responseStr == null) {
                 response.put("success", false);
-                response.put("message", "Null response returned from BEAdmin");
+                response.put("message", "Không nhận được phản hồi từ hệ thống xác thực (BEAdmin).");
                 return ResponseEntity.status(500).body(response);
             }
 
@@ -424,7 +424,7 @@ public class BranchSyncController {
             JsonObject responseJson = gson.fromJson(responseStr, JsonObject.class);
             if (responseJson == null || !responseJson.has("data")) {
                 response.put("success", false);
-                response.put("message", "Response from BEAdmin is empty or missing data field");
+                response.put("message", "Phản hồi từ hệ thống xác thực (BEAdmin) không hợp lệ hoặc thiếu dữ liệu.");
                 return ResponseEntity.status(500).body(response);
             }
 

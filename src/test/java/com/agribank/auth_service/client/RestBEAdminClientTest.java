@@ -2,6 +2,7 @@ package com.agribank.auth_service.client;
 
 import com.agribank.auth_service.dto.request.LoginRequest;
 import com.agribank.auth_service.dto.response.UserInfo;
+import com.agribank.auth_service.exception.AuthenticationException;
 import com.agribank.auth_service.util.PGPEncryptionUtils;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
@@ -144,10 +145,36 @@ public class RestBEAdminClientTest {
         when(restTemplate.postForObject(any(String.class), any(HttpEntity.class), eq(String.class)))
                 .thenReturn(gson.toJson(outerResponseJson));
 
-        // 2. Act
-        UserInfo userInfo = restBEAdminClient.authenticate(loginRequest);
+        // 2. Act & 3. Assert
+        AuthenticationException ex = assertThrows(AuthenticationException.class, () -> {
+            restBEAdminClient.authenticate(loginRequest);
+        });
+        assertEquals("Sai tài khoản hoặc mật khẩu.", ex.getMessage());
+    }
 
-        // 3. Assert
-        assertNull(userInfo);
+    @Test
+    public void testAuthenticate_FailedOtp() throws Exception {
+        // 1. Arrange
+        LoginRequest loginRequest = new LoginRequest("NAMNH", "123456aA@", "10509999", "999999");
+
+        JsonObject innerResponseJson = new JsonObject();
+        innerResponseJson.addProperty("success", false);
+        innerResponseJson.addProperty("errorCode", "01");
+        innerResponseJson.addProperty("errorDesc", "LOGIN MFA FAIL: [OTP] IS INVALID");
+
+        String innerResponseStr = gson.toJson(innerResponseJson);
+        String base64InnerResponse = Base64.getEncoder().encodeToString(innerResponseStr.getBytes(StandardCharsets.UTF_8));
+
+        JsonObject outerResponseJson = new JsonObject();
+        outerResponseJson.addProperty("data", base64InnerResponse);
+
+        when(restTemplate.postForObject(any(String.class), any(HttpEntity.class), eq(String.class)))
+                .thenReturn(gson.toJson(outerResponseJson));
+
+        // 2. Act & 3. Assert
+        AuthenticationException ex = assertThrows(AuthenticationException.class, () -> {
+            restBEAdminClient.authenticate(loginRequest);
+        });
+        assertEquals("Mã xác thực (OTP) không chính xác.", ex.getMessage());
     }
 }

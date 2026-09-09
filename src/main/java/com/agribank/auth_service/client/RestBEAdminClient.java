@@ -162,11 +162,8 @@ public class RestBEAdminClient implements BEAdminClient {
 
             if (!success || !"00".equals(errorCode)) {
                 log.warn("BEAdmin authentication rejected: {} - {}", errorCode, errorDesc);
-                if ("01".equals(errorCode) || (errorDesc != null && errorDesc.toUpperCase().contains("OTP"))) {
-                    throw new AuthenticationException("invalid OTP");
-                } else {
-                    throw new AuthenticationException("Sai tài khoản hoặc mật khẩu.");
-                }
+                String errorMessage = resolveErrorMessage(errorCode, errorDesc);
+                throw new AuthenticationException(errorMessage);
             }
 
             JsonObject userJson = innerResponse.getAsJsonObject("user");
@@ -242,6 +239,22 @@ public class RestBEAdminClient implements BEAdminClient {
             log.error("Exception during BEAdmin remote authentication calling: {}", e.getMessage(), e);
             throw new RuntimeException("Lỗi kết nối hoặc xử lý thông tin BEAdmin: " + e.getMessage(), e);
         }
+    }
+
+    private String resolveErrorMessage(String errorCode, String errorDesc) {
+        if (errorDesc != null && !errorDesc.isBlank()) {
+            String descUpper = errorDesc.toUpperCase();
+            if (descUpper.contains("OTP")) {
+                return "Mã xác thực (OTP) không chính xác.";
+            }
+            if (descUpper.contains("LOCK") || descUpper.contains("KHÓA") || descUpper.contains("KHOA")) {
+                return "Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên.";
+            }
+            if (descUpper.contains("EXPIRE") || descUpper.contains("HẾT HẠN") || descUpper.contains("HET HAN")) {
+                return "Mật khẩu đã hết hạn. Vui lòng đổi mật khẩu.";
+            }
+        }
+        return "Sai tài khoản hoặc mật khẩu.";
     }
 
     private String getClientIp() {
