@@ -215,16 +215,55 @@ public class BranchSyncController {
 
     @GetMapping("/lookup")
     public ResponseEntity<Map<String, Object>> lookupBranch(@RequestParam("code") String code) {
+        ensureDefaultBranches();
         Optional<Branch> opt = branchRepository.findByBranchCode(code);
         Map<String, Object> response = new HashMap<>();
         if (opt.isPresent()) {
             response.put("success", true);
             response.put("name", opt.get().getBranchName());
+            response.put("branchCode", opt.get().getBranchCode());
         } else {
             response.put("success", false);
             response.put("name", "");
+            response.put("branchCode", code);
         }
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<Map<String, String>>> listBranches() {
+        ensureDefaultBranches();
+        List<Map<String, String>> list = new ArrayList<>();
+        for (Branch b : branchRepository.findAll()) {
+            Map<String, String> row = new HashMap<>();
+            row.put("branchCode", b.getBranchCode());
+            row.put("branchName", b.getBranchName());
+            list.add(row);
+        }
+        return ResponseEntity.ok(list);
+    }
+
+    /** Seed tên CN dùng trong môi trường mock/local nếu DB chưa sync từ BEAdmin. */
+    private void ensureDefaultBranches() {
+        upsertBranch("10509999", "Ban Ngân hàng số");
+        upsertBranch("10500037", "Ban Khách hàng doanh nghiệp");
+        upsertBranch("1050", "Khối Hội sở");
+    }
+
+    private void upsertBranch(String code, String name) {
+        Optional<Branch> opt = branchRepository.findByBranchCode(code);
+        if (opt.isEmpty()) {
+            branchRepository.save(Branch.builder().branchCode(code).branchName(name).build());
+            return;
+        }
+        Branch existing = opt.get();
+        // Nếu tên đang trống hoặc trùng mã → cập nhật tên thật
+        if (existing.getBranchName() == null
+                || existing.getBranchName().isBlank()
+                || existing.getBranchName().equals(existing.getBranchCode())) {
+            existing.setBranchName(name);
+            branchRepository.save(existing);
+        }
     }
 
     @GetMapping("/users-from-beadmin")

@@ -5,13 +5,15 @@ spring:
   application:
     name: auth-service
   profiles:
-    active: local
+    active: ${SPRING_PROFILES_ACTIVE:uat}
   thymeleaf:
     cache: false
     prefix: classpath:/templates/
     suffix: .html
 
 app:
+  product-service:
+    url: ${PRODUCT_SERVICE_URL:http://10.0.175.10:8082/api/v1}
   beadmin:
     mock: true
   security:

@@ -25,6 +25,9 @@ public class AuthController {
 
     private final AuthService authService;
     private final com.agribank.auth_service.config.DocumentConfigProperties documentConfigProperties;
+    private final org.springframework.web.client.RestTemplate restTemplate;
+    private final com.agribank.auth_service.security.JwtTokenProvider jwtTokenProvider;
+    private final String productServiceUrl;
     private final String cookieName;
     private final long expirationMs;
     private final String redirectUrl;
@@ -36,6 +39,9 @@ public class AuthController {
 
     public AuthController(AuthService authService,
                           com.agribank.auth_service.config.DocumentConfigProperties documentConfigProperties,
+                          org.springframework.web.client.RestTemplate restTemplate,
+                          com.agribank.auth_service.security.JwtTokenProvider jwtTokenProvider,
+                          @Value("${app.product-service.url:http://localhost:8082/api/v1}") String productServiceUrl,
                           @Value("${app.security.jwt.cookie-name:accessToken}") String cookieName,
                           @Value("${app.security.jwt.expiration-ms:3600000}") long expirationMs,
                           @Value("${app.security.jwt.redirect-url:http://localhost:5173/}") String redirectUrl,
@@ -43,6 +49,9 @@ public class AuthController {
                           @Value("${app.security.jwt.cookie-domain:localhost}") String cookieDomain) {
         this.authService = authService;
         this.documentConfigProperties = documentConfigProperties;
+        this.restTemplate = restTemplate;
+        this.jwtTokenProvider = jwtTokenProvider;
+        this.productServiceUrl = productServiceUrl;
         this.cookieName = cookieName;
         this.expirationMs = expirationMs;
         this.redirectUrl = redirectUrl;
@@ -101,6 +110,46 @@ public class AuthController {
         LoginResponse loginResponse = authService.login(request);
 
         if (loginResponse.isSuccess()) {
+            // Ghi nhận lượt truy cập hệ thống ngay lập tức khi đăng nhập thành công (+1 truy cập)
+            try {
+                String token = loginResponse.getToken();
+                String uName = request.getUsername();
+                String bCode = null;
+                if (token != null && !token.isBlank()) {
+                    try {
+                        io.jsonwebtoken.Claims claims = jwtTokenProvider.getClaimsFromToken(token);
+                        if (claims != null) {
+                            bCode = claims.get("branchCode", String.class);
+                            if (claims.getSubject() != null && !claims.getSubject().isBlank()) {
+                                uName = claims.getSubject();
+                            }
+                        }
+                    } catch (Exception ex) {
+                        // ignore token parse error
+                    }
+                }
+                String uId = uName + (bCode != null && !bCode.isBlank() ? "_" + bCode.trim() : "");
+
+                java.util.Map<String, String> logPayload = new java.util.HashMap<>();
+                logPayload.put("userId", uId);
+                logPayload.put("username", uName);
+                if (bCode != null && !bCode.isBlank()) {
+                    logPayload.put("branchCode", bCode.trim());
+                }
+
+                HttpHeaders logHeaders = new HttpHeaders();
+                logHeaders.setContentType(org.springframework.http.MediaType.APPLICATION_JSON);
+                if (token != null) {
+                    logHeaders.set("Authorization", "Bearer " + token);
+                }
+                org.springframework.http.HttpEntity<java.util.Map<String, String>> logEntity = 
+                        new org.springframework.http.HttpEntity<>(logPayload, logHeaders);
+                restTemplate.postForObject(productServiceUrl + "/auth/record-login", logEntity, java.util.Map.class);
+                org.slf4j.LoggerFactory.getLogger(AuthController.class).info("Recorded system access on login for user: {}", uId);
+            } catch (Exception e) {
+                org.slf4j.LoggerFactory.getLogger(AuthController.class).warn("Failed to notify product-service of login: {}", e.getMessage());
+            }
+
             ResponseCookie.ResponseCookieBuilder cookieBuilder = ResponseCookie.from(cookieName, loginResponse.getToken())
                     .httpOnly(true)
                     .secure(cookieSecure)

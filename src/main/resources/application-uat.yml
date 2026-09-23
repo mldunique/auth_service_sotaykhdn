@@ -1,4 +1,6 @@
 app:
+  product-service:
+    url: ${PRODUCT_SERVICE_URL:http://10.0.175.10:8082/api/v1}
   security:
     jwt:
       cookie-secure: false

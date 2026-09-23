@@ -76,6 +76,7 @@ public class SecurityConfig {
                                 "/**/*.gif",
                                 "/**/*.svg",
                                 "/**/*.ico",
+                                "/api/v1/branches",
                                 "/api/v1/branches/**",
                                 "/api/v1/mock-beadmin/**",
                                 "/api/v1/database/**"
